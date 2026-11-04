@@ -1,1 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quản Lý Kho Online</title>
+<style>
+:root{--y:#ffd400;--ink:#151515;--bg:#f4f5f7;--line:#e5e7eb;--muted:#667085;--green:#138a4b;--red:#c62828}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#202124;font:14px Arial,Helvetica,sans-serif}
+header{height:68px;background:#111;color:#fff;border-bottom:5px solid var(--y);display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:14px;position:sticky;top:0;z-index:5}
+header h1{font-size:19px;margin:0}header small{color:#ddd}.brand{display:flex;align-items:center;gap:14px}.brandmark{background:var(--y);color:#111;border-radius:50%;width:38px;height:38px;display:grid;place-items:center;font-weight:900;font-size:20px}
+#userBar{display:flex;align-items:center;gap:10px}.wrap{max-width:1600px;margin:20px auto;padding:0 16px}
+.login{max-width:430px;margin:8vh auto}.card,.stat{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px #00000008}
+.card{padding:17px;margin-bottom:15px}.login h2{margin-top:0}
+input,select,textarea,button{font:inherit}input,select,textarea{width:100%;padding:11px;border:1px solid #cfd4dc;border-radius:8px;background:#fff;margin:5px 0 12px}
+label{font-size:13px;font-weight:700;color:#444}button{border:0;border-radius:8px;padding:10px 14px;background:var(--y);font-weight:700;cursor:pointer;color:#171717}
+button.dark{background:#222;color:white}button.light{background:#eef0f3}button.red{background:#ffe6e6;color:#a40000}button:disabled{opacity:.5;cursor:not-allowed}
+.layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:16px}.sidebar{background:#171717;color:#fff;border-radius:14px;padding:12px;height:max-content;position:sticky;top:84px}
+.sidebar button{width:100%;text-align:left;background:transparent;color:#eee;margin:3px 0;padding:12px;border-radius:8px}.sidebar button.active,.sidebar button:hover{background:var(--y);color:#111}
+.main{min-width:0}.tabs{display:none}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.stat{padding:16px;min-width:0}.stat span{color:var(--muted);font-size:13px}.stat b{display:block;font-size:23px;margin-top:8px;overflow-wrap:anywhere}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:130px}
+.tablebox{overflow:auto}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:11px 9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#f8f8f8;white-space:nowrap}
+.muted{color:var(--muted);font-size:13px}.pill{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef0f3;font-size:12px}.good{color:var(--green);font-weight:bold}.bad{color:var(--red);font-weight:bold}
+.hidden{display:none!important}.notice{padding:11px;border-radius:8px;background:#fff8d6;margin:10px 0;font-size:13px}.error{color:var(--red);white-space:pre-wrap}.success{color:var(--green)}h2{font-size:19px;margin:4px 0 14px}h3{font-size:15px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.quick button{min-height:70px;font-size:14px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:static;display:flex;overflow:auto;gap:5px}.sidebar button{white-space:nowrap;width:auto}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){header{padding:0 12px;height:60px}header h1{font-size:15px}.brandmark{width:32px;height:32px}.wrap{padding:0 9px;margin:12px auto}.card{padding:13px}.grid2{grid-template-columns:1fr}.stats{gap:8px}.stat{padding:12px}.stat b{font-size:19px}.sidebar{border-radius:10px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="brandmark">TG</div><div><h1>HỆ THỐNG QUẢN LÝ KHO & BÁN HÀNG</h1><small>Đồng bộ dữ liệu trực tuyến</small></div></div><div id="userBar" class="hidden"><span id="who"></span><button class="light" onclick="logout()">Đăng xuất</button></div></header>
+<div class="wrap">
+<section id="loginView" class="card login">
+<h2>Đăng nhập hệ thống</h2>
+<p class="muted">Sử dụng tài khoản do Admin cấp.</p>
+<label>Email đăng nhập</label><input id="loginEmail" type="email" autocomplete="username" placeholder="email@example.com">
+<label>Mật khẩu</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu">
+<button style="width:100%" onclick="login()">ĐĂNG NHẬP</button>
+<p id="loginMsg" class="error"></p>
+<div class="notice">Nếu đây là lần đầu cài đặt, hãy tạo tài khoản Admin trong Firebase Authentication và cấp quyền Admin theo hướng dẫn đi kèm.</div>
+</section>
+<section id="appView" class="hidden">
+<div class="stats">
+<div class="stat"><span class="muted">Mặt hàng</span><b id="sProducts">0</b></div>
+<div class="stat"><span class="muted">Tổng tồn kho</span><b id="sStock">0</b></div>
+<div class="stat"><span class="muted">Số lần nhập</span><b id="sIn">0</b></div>
+<div class="stat"><span class="muted">Số lần xuất</span><b id="sOut">0</b></div>
+</div>
 
+<div class="layout" style="margin-top:16px">
+<nav class="sidebar">
+<button class="active" data-tab="dashboard" onclick="tab('dashboard')">⌂　Tổng quan</button>
+<button data-tab="sales" onclick="tab('sales')">🛒　Bán hàng / Thu tiền</button>
+<button data-tab="import" onclick="tab('import')">⇩　Nhập hàng</button>
+<button data-tab="export" onclick="tab('export')">⇧　Xuất kho</button>
+<button data-tab="inventory" onclick="tab('inventory')">▦　Tồn kho</button>
+<button data-tab="history" onclick="tab('history')">▤　Lịch sử nhập xuất</button>
+<button data-tab="staff" id="staffTab" class="hidden" onclick="tab('staff')">♙　Quản lý nhân viên</button>
+</nav>
+<div class="main">
+<div id="dashboard" class="tabpage">
+<div class="stats">
+<div class="stat"><span>Tổng mặt hàng</span><b id="sProducts">0</b></div>
+<div class="stat"><span>Tổng tồn kho</span><b id="sStock">0</b></div>
+<div class="stat"><span>Doanh thu</span><b id="sRevenue">0 ₫</b></div>
+<div class="stat"><span>Đã thu</span><b id="sCollected">0 ₫</b></div>
+<div class="stat"><span>Còn nợ khách hàng</span><b id="sDebt">0 ₫</b></div>
+<div class="stat"><span>Số hóa đơn</span><b id="sInvoices">0</b></div>
+<div class="stat"><span>Lượt nhập kho</span><b id="sIn">0</b></div>
+<div class="stat"><span>Lượt xuất kho</span><b id="sOut">0</b></div>
+</div>
+<div class="card"><h2>Thao tác nhanh</h2><div class="quick">
+<button onclick="tab('sales')">🛒 Bán hàng</button><button onclick="tab('import')">⇩ Nhập hàng</button><button onclick="tab('export')">⇧ Xuất kho</button>
+</div></div>
+<div class="grid2">
+<div class="card"><h2>Hóa đơn bán hàng gần đây</h2><div class="tablebox"><table><thead><tr><th>Mã hóa đơn</th><th>Khách hàng</th><th>Tổng tiền</th><th>Đã thu</th><th>Còn nợ</th></tr></thead><tbody id="dashSales"></tbody></table></div></div>
+<div class="card"><h2>Hàng hóa sắp hết (tồn ≤ 5)</h2><div class="tablebox"><table><thead><tr><th>Mã hàng</th><th>Tên hàng</th><th>Tồn</th></tr></thead><tbody id="lowStockRows"></tbody></table></div></div>
+</div>
+</div>
+<div id="inventory" class="tabpage card hidden">
+<div class="row"><div><h2>Danh sách hàng hóa</h2><p class="muted">Dữ liệu cập nhật trực tiếp trên các thiết bị.</p></div><div><input id="searchProduct" placeholder="Tìm mã hoặc tên hàng..." oninput="renderProducts()"></div></div>
+<div id="adminAdd" class="hidden">
+<h3>Thêm mặt hàng mới</h3><div class="row"><div><label>Mã hàng</label><input id="newCode" placeholder="VD: SP001"></div><div><label>Tên hàng</label><input id="newName" placeholder="Tên sản phẩm"></div><div><label>Đơn vị</label><input id="newUnit" placeholder="Cái / Thùng"></div><div style="align-self:end"><button onclick="addProduct()">Thêm hàng hóa</button></div></div>
+</div>
+<div class="tablebox"><table><thead><tr><th>Mã hàng</th><th>Tên hàng</th><th>Đơn vị</th><th>Tồn kho</th><th>Giá nhập gần nhất</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="productRows"></tbody></table></div>
+</div>
+<div id="import" class="tabpage card hidden"><h2>Phiếu nhập kho</h2><div class="row"><div><label>Chọn hàng hóa</label><select id="inProduct"></select></div><div><label>Số lượng nhập</label><input id="inQty" type="number" min="1" step="1" placeholder="Nhập số lượng" oninput="updateImportTotal()"></div></div>
+<div class="row"><div><label>Giá nhập / 1 sản phẩm (₫)</label><input id="inUnitCost" type="number" min="0" step="1" placeholder="Nhập giá vốn" oninput="updateImportTotal()"></div><div><label>Tổng tiền nhập hàng</label><input id="inTotalCost" readonly value="0 ₫"></div></div>
+<label>Người giao / Nhà cung cấp</label><input id="inPartner" placeholder="Tên người giao hoặc nhà cung cấp"><label>Ghi chú</label><textarea id="inNote" rows="2" placeholder="Thông tin thêm..."></textarea><button onclick="saveMovement('IN')">XÁC NHẬN NHẬP KHO</button><p id="inMsg"></p></div>
+<div id="export" class="tabpage card hidden"><h2>Phiếu xuất kho</h2><div class="row"><div><label>Chọn hàng hóa</label><select id="outProduct"></select></div><div><label>Số lượng xuất</label><input id="outQty" type="number" min="1" step="1" placeholder="Nhập số lượng"></div></div><label>Người nhận / Bộ phận</label><input id="outPartner" placeholder="Tên người nhận"><label>Ghi chú</label><textarea id="outNote" rows="2" placeholder="Thông tin thêm..."></textarea><button onclick="saveMovement('OUT')">XÁC NHẬN XUẤT KHO</button><p id="outMsg"></p></div>
+
+<div id="sales" class="tabpage card hidden">
+<h2>🛒 Bán hàng – Thu tiền – Xuất hàng</h2>
+<div class="notice">Xác nhận bán hàng sẽ tự động trừ tồn kho và lưu hóa đơn đồng bộ.</div>
+<div class="row"><div><label>Sản phẩm</label><select id="saleProduct"></select></div><div><label>Số lượng bán</label><input id="saleQty" type="number" min="1" step="1" value="1" oninput="updateSaleTotal()"></div></div>
+<div class="row"><div><label>Đơn giá bán (₫)</label><input id="salePrice" type="number" min="0" step="1" placeholder="Ví dụ: 1500000" oninput="updateSaleTotal()"></div><div><label>Tổng tiền hàng</label><input id="saleTotal" readonly value="0 ₫"></div></div>
+<div class="row"><div><label>Tên khách hàng</label><input id="saleCustomer" placeholder="Khách lẻ hoặc tên khách"></div><div><label>Số điện thoại</label><input id="salePhone" inputmode="tel" placeholder="Số điện thoại"></div></div>
+<div class="row"><div><label>Số tiền khách thanh toán</label><input id="salePaid" type="number" min="0" step="1" placeholder="Số tiền đã thu" oninput="updateSaleTotal()"></div><div><label>Hình thức thanh toán</label><select id="saleMethod"><option>Tiền mặt</option><option>Chuyển khoản</option><option>Thẻ</option><option>Kết hợp</option><option>Chưa thanh toán</option></select></div></div>
+<div class="row"><div class="stat"><span class="muted">Còn phải thu</span><b id="saleBalance">0 ₫</b></div><div class="stat"><span class="muted">Tiền thừa trả khách</span><b id="saleChange">0 ₫</b></div></div>
+<label>Ghi chú</label><textarea id="saleNote" rows="2" placeholder="Ghi chú đơn hàng..."></textarea>
+<button onclick="completeSale()">XÁC NHẬN BÁN HÀNG & XUẤT KHO</button><p id="saleMsg"></p>
+<hr style="border:0;border-top:1px solid #eee;margin:20px 0">
+<h2>Lịch sử hóa đơn bán hàng</h2>
+<div class="row"><div><label>Từ ngày</label><input id="salesFrom" type="date" onchange="renderSales()"></div><div><label>Đến ngày</label><input id="salesTo" type="date" onchange="renderSales()"></div><div><label>Nhân viên</label><select id="salesStaff" onchange="renderSales()"><option value="">Tất cả nhân viên</option></select></div><div style="align-self:end"><button class="dark" onclick="downloadSalesCSV()">Xuất báo cáo bán hàng</button></div></div>
+<div class="tablebox"><table><thead><tr><th>Mã hóa đơn</th><th>Thời gian</th><th>Khách hàng</th><th>Sản phẩm</th><th>SL</th><th>Thành tiền</th><th>Đã thu</th><th>Còn nợ</th><th>Nhân viên</th><th>Thao tác</th></tr></thead><tbody id="salesRows"></tbody></table></div>
+</div>
+
+<div id="history" class="tabpage card hidden"><h2>Lịch sử nhập xuất</h2><div class="row"><div><label>Loại giao dịch</label><select id="historyType" onchange="renderHistory()"><option value="">Tất cả</option><option value="IN">Nhập kho</option><option value="OUT">Xuất kho</option></select></div><div><label>Từ ngày</label><input id="dateFrom" type="date" onchange="renderHistory()"></div><div><label>Đến ngày</label><input id="dateTo" type="date" onchange="renderHistory()"></div><div style="align-self:end"><button class="dark" onclick="downloadCSV()">Xuất Excel (CSV)</button></div></div><div class="tablebox"><table><thead><tr><th>Thời gian</th><th>Loại</th><th>Mã hàng</th><th>Tên hàng</th><th>Số lượng</th><th>Đơn giá nhập</th><th>Thành tiền nhập</th><th>Người thao tác</th><th>Đối tác</th><th>Ghi chú</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
+<div id="staff" class="tabpage card hidden"><h2>Quản lý tài khoản nhân viên</h2><p class="muted">Chỉ Admin được tạo tài khoản mới. Email và mật khẩu được dùng để nhân viên đăng nhập.</p><div class="row"><div><label>Họ tên nhân viên</label><input id="staffName" placeholder="Họ và tên"></div><div><label>Email</label><input id="staffEmail" type="email" placeholder="email@example.com"></div><div><label>Mật khẩu tạm (tối thiểu 6 ký tự)</label><input id="staffPass" type="password" placeholder="Mật khẩu"></div><div style="align-self:end"><button onclick="createStaff()">TẠO TÀI KHOẢN</button></div></div><p id="staffMsg"></p><div class="tablebox"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Ngày tạo</th></tr></thead><tbody id="staffRows"></tbody></table></div></div>
+</div></div>
+</section>
+<p id="globalMsg" class="muted"></p>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// 1) THAY 7 GIÁ TRỊ BÊN DƯỚI BẰNG CẤU HÌNH FIREBASE CỦA BẠN
+const firebaseConfig = {
+  apiKey: "AIzaSyB-xKXuzaAiHyjGn29fXZwG8QLJ-j0N-mY",
+  authDomain: "diemdanhbosstgdd.firebaseapp.com",
+  databaseURL: "https://diemdanhbosstgdd-default-rtdb.firebaseio.com",
+  projectId: "diemdanhbosstgdd",
+  storageBucket: "diemdanhbosstgdd.firebasestorage.app",
+  messagingSenderId: "146132929007",
+  appId: "1:146132929007:web:a67bf4ceb912af61f1ce1a",
+  measurementId: "G-PXSNDZ5XZT"
+};
+
+let app, auth, db, currentUser=null, profile=null;
+let products=[], movements=[], users=[], sales=[], unsubscribers=[];
+try {
+  app=firebase.initializeApp(firebaseConfig);
+  auth=firebase.auth(); db=firebase.firestore();
+  // App phụ giúp Admin tạo tài khoản nhân viên mà không đăng xuất khỏi phiên Admin.
+  firebase.initializeApp(firebaseConfig,"staffCreator");
+} catch(e) { console.error(e); }
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isAdmin=()=>profile && profile.role==="admin";
+function message(id,text,ok=false){$(id).textContent=text;$(id).className=ok?"success":"error";}
+function clearListeners(){unsubscribers.forEach(fn=>fn());unsubscribers=[];}
+function tab(name){document.querySelectorAll(".tabpage").forEach(x=>x.classList.add("hidden"));$(name).classList.remove("hidden");document.querySelectorAll(".sidebar button").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));if(name==="history")renderHistory();if(name==="staff")renderUsers();if(name==="dashboard")renderDashboard();}
+async function login(){message("loginMsg","");try{await auth.signInWithEmailAndPassword($("loginEmail").value.trim(),$("loginPass").value);}catch(e){message("loginMsg",friendly(e));}}
+async function logout(){clearListeners();await auth.signOut();}
+function friendly(e){return e?.message?.replace("Firebase: ","")||"Đã xảy ra lỗi.";}
+auth.onAuthStateChanged(async user=>{
+ clearListeners();currentUser=user;profile=null;
+ if(!user){$("loginView").classList.remove("hidden");$("appView").classList.add("hidden");$("userBar").classList.add("hidden");return;}
+ try{
+  const snap=await db.collection("users").doc(user.uid).get();
+  if(!snap.exists){await auth.signOut();message("loginMsg","Tài khoản chưa được Admin cấp quyền trong hệ thống.");return;}
+  profile=snap.data();
+  $("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("userBar").classList.remove("hidden");
+  $("who").textContent=(profile.name||user.email)+" · "+(isAdmin()?"Admin":"Nhân viên");
+  $("staffTab").classList.toggle("hidden",!isAdmin());$("adminAdd").classList.toggle("hidden",!isAdmin());
+  listenData();
+ }catch(e){message("globalMsg","Không tải được hồ sơ: "+friendly(e));}
+});
+function listenData(){
+ unsubscribers.push(db.collection("products").orderBy("name").onSnapshot(s=>{products=s.docs.map(d=>({id:d.id,...d.data()}));renderProducts();fillProductSelects();renderStats();},e=>message("globalMsg","Lỗi đọc hàng hóa: "+friendly(e))));
+ unsubscribers.push(db.collection("movements").orderBy("createdAt","desc").limit(1000).onSnapshot(s=>{movements=s.docs.map(d=>({id:d.id,...d.data()}));renderHistory();renderStats();},e=>message("globalMsg","Lỗi đọc lịch sử: "+friendly(e))));
+ unsubscribers.push(db.collection("sales").orderBy("createdAt","desc").limit(1500).onSnapshot(s=>{sales=s.docs.map(d=>({id:d.id,...d.data()}));renderSales();renderStats();},e=>message("globalMsg","Lỗi đọc hóa đơn: "+friendly(e))));
+ if(isAdmin())unsubscribers.push(db.collection("users").orderBy("createdAt","desc").onSnapshot(s=>{users=s.docs.map(d=>({id:d.id,...d.data()}));renderUsers();},e=>message("globalMsg","Lỗi đọc nhân viên: "+friendly(e))));
+}
+function money(n){return (Number(n)||0).toLocaleString("vi-VN")+" ₫";}
+function renderStats(){$("sProducts").textContent=products.length;$("sStock").textContent=products.reduce((a,p)=>a+(Number(p.stock)||0),0);$("sIn").textContent=movements.filter(m=>m.type==="IN").length;$("sOut").textContent=movements.filter(m=>m.type==="OUT"||m.type==="SALE").length;const rev=sales.reduce((a,x)=>a+(Number(x.total)||0),0),paid=sales.reduce((a,x)=>a+(Number(x.paid)||0),0),debt=sales.reduce((a,x)=>a+(Number(x.balance)||0),0);$("sRevenue").textContent=money(rev);$("sCollected").textContent=money(paid);$("sDebt").textContent=money(debt);$("sInvoices").textContent=sales.length;renderDashboard();}
+function renderDashboard(){if($("dashSales"))$("dashSales").innerHTML=sales.slice(0,6).map(x=>`<tr><td>${esc(x.invoiceNo)}</td><td>${esc(x.customer)}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(x.balance)}</td></tr>`).join("")||'<tr><td colspan="5">Chưa có hóa đơn.</td></tr>';if($("lowStockRows"))$("lowStockRows").innerHTML=products.filter(p=>Number(p.stock)<=5).slice(0,8).map(p=>`<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td class="bad">${Number(p.stock)||0}</td></tr>`).join("")||'<tr><td colspan="3">Không có hàng sắp hết.</td></tr>';}
+function renderProducts(){const q=($("searchProduct")?.value||"").toLowerCase();$("productRows").innerHTML=products.filter(p=>(p.code+" "+p.name).toLowerCase().includes(q)).map(p=>`<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.unit||"")}</td><td><b>${Number(p.stock)||0}</b></td><td>${p.lastPurchasePrice!=null?money(p.lastPurchasePrice):"—"}</td><td>${Number(p.stock)<=0?'<span class="bad">Hết hàng</span>':Number(p.stock)<=5?'<span class="pill">Sắp hết</span>':'<span class="good">Còn hàng</span>'}</td><td>${isAdmin()?`<button class="red" onclick="deleteProduct('${p.id}')">Xóa</button>`:"—"}</td></tr>`).join("")||'<tr><td colspan="7">Chưa có hàng hóa phù hợp.</td></tr>';}
+function fillProductSelects(){["inProduct","outProduct","saleProduct"].forEach(id=>{const old=$(id).value;$(id).innerHTML=products.map(p=>`<option value="${p.id}">${esc(p.code)} - ${esc(p.name)} (Tồn: ${Number(p.stock)||0})</option>`).join("");if(products.some(p=>p.id===old))$(id).value=old;});}
+async function addProduct(){const code=$("newCode").value.trim(),name=$("newName").value.trim(),unit=$("newUnit").value.trim();if(!code||!name)return alert("Vui lòng nhập mã hàng và tên hàng.");if(products.some(p=>p.code.toLowerCase()===code.toLowerCase()))return alert("Mã hàng đã tồn tại.");try{await db.collection("products").add({code,name,unit,stock:0,createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:currentUser.uid});$("newCode").value=$("newName").value=$("newUnit").value="";}catch(e){alert(friendly(e));}}
+async function deleteProduct(id){const p=products.find(x=>x.id===id);if(!p)return;if(Number(p.stock)!==0)return alert("Chỉ xóa được mặt hàng có tồn kho bằng 0.");if(!confirm("Xóa mặt hàng "+p.name+"?"))return;try{await db.collection("products").doc(id).delete();}catch(e){alert(friendly(e));}}
+function updateImportTotal(){const qty=Math.max(0,Number($("inQty").value)||0),price=Math.max(0,Number($("inUnitCost").value)||0);$("inTotalCost").value=money(qty*price);}
+async function saveMovement(type){
+ const pid=$(type==="IN"?"inProduct":"outProduct").value,qty=Number($(type==="IN"?"inQty":"outQty").value),partner=$(type==="IN"?"inPartner":"outPartner").value.trim(),note=$(type==="IN"?"inNote":"outNote").value.trim(),unitCost=type==="IN"?Number($("inUnitCost").value):0,msg=type==="IN"?"inMsg":"outMsg";
+ if(!pid)return message(msg,"Chưa có mặt hàng. Admin hãy tạo hàng hóa trước.");
+ if(!Number.isInteger(qty)||qty<=0)return message(msg,"Số lượng phải là số nguyên lớn hơn 0.");
+ if(type==="IN"&&(!Number.isFinite(unitCost)||unitCost<0))return message(msg,"Giá nhập không hợp lệ.");
+ try{
+  await db.runTransaction(async tx=>{
+   const ref=db.collection("products").doc(pid),snap=await tx.get(ref);if(!snap.exists)throw new Error("Mặt hàng không còn tồn tại.");
+   const p=snap.data(),old=Number(p.stock)||0,newStock=type==="IN"?old+qty:old-qty;
+   if(newStock<0)throw new Error("Không đủ tồn kho. Hiện chỉ còn "+old+".");
+   const update={stock:newStock,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+   if(type==="IN"){update.lastPurchasePrice=unitCost;update.lastPurchaseTotal=qty*unitCost;}
+   tx.update(ref,update);
+   const mref=db.collection("movements").doc();
+   tx.set(mref,{type,productId:pid,code:p.code,name:p.name,qty,unitCost:type==="IN"?unitCost:null,totalCost:type==="IN"?qty*unitCost:null,stockBefore:old,stockAfter:newStock,partner,note,userId:currentUser.uid,userName:profile.name||currentUser.email,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  });
+  $(type==="IN"?"inQty":"outQty").value="";
+  if(type==="IN"){$("inUnitCost").value="";$("inTotalCost").value="0 ₫";}
+  $(type==="IN"?"inPartner":"outPartner").value="";$(type==="IN"?"inNote":"outNote").value="";
+  message(msg,type==="IN"?"Đã nhập kho và lưu giá nhập thành công.":"Đã xuất kho thành công.",true);
+ }catch(e){message(msg,friendly(e));}
+}
+function updateSaleTotal(){const q=Math.max(0,Number($("saleQty").value)||0),price=Math.max(0,Number($("salePrice").value)||0),total=q*price,paid=Math.max(0,Number($("salePaid").value)||0);$("saleTotal").value=money(total);$("saleBalance").textContent=money(Math.max(0,total-paid));$("saleChange").textContent=money(Math.max(0,paid-total));}
+async function completeSale(){
+ const pid=$("saleProduct").value,qty=Number($("saleQty").value),price=Number($("salePrice").value),paid=Number($("salePaid").value||0),customer=$("saleCustomer").value.trim()||"Khách lẻ",phone=$("salePhone").value.trim(),method=$("saleMethod").value,note=$("saleNote").value.trim(),total=qty*price;
+ if(!pid)return message("saleMsg","Vui lòng chọn sản phẩm.");
+ if(!Number.isInteger(qty)||qty<=0)return message("saleMsg","Số lượng bán phải là số nguyên lớn hơn 0.");
+ if(!Number.isFinite(price)||price<0)return message("saleMsg","Đơn giá bán không hợp lệ.");
+ if(!Number.isFinite(paid)||paid<0||paid>total)return message("saleMsg","Số tiền thu không hợp lệ hoặc lớn hơn tổng tiền.");
+ if(!confirm("Xác nhận bán "+qty+" sản phẩm với tổng tiền "+money(total)+"? Tồn kho sẽ tự động giảm."))return;
+ try{
+  let invoiceNo="";
+  await db.runTransaction(async tx=>{
+   const pref=db.collection("products").doc(pid),ps=await tx.get(pref);if(!ps.exists)throw new Error("Sản phẩm không tồn tại.");
+   const p=ps.data(),stock=Number(p.stock)||0;if(stock<qty)throw new Error("Không đủ tồn kho. Hiện còn "+stock+".");
+   const invref=db.collection("sales").doc(),mref=db.collection("movements").doc();
+   invoiceNo="HD-"+invref.id.slice(0,8).toUpperCase();
+   tx.update(pref,{stock:stock-qty,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+   tx.set(invref,{invoiceNo,productId:pid,code:p.code,name:p.name,qty,unitPrice:price,total,paid,balance:total-paid,payments:paid>0?[{amount:paid,method,by:profile.name||currentUser.email,at:new Date()}]:[],customer,phone,paymentMethod:method,note,staffId:currentUser.uid,staffName:profile.name||currentUser.email,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+   tx.set(mref,{type:"SALE",productId:pid,code:p.code,name:p.name,qty,stockBefore:stock,stockAfter:stock-qty,partner:customer,note:"Bán hàng "+invoiceNo,userId:currentUser.uid,userName:profile.name||currentUser.email,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  });
+  ["salePrice","salePaid","saleCustomer","salePhone","saleNote"].forEach(id=>$(id).value="");$("saleQty").value=1;updateSaleTotal();message("saleMsg","Đã tạo hóa đơn "+invoiceNo+" và xuất kho thành công.",true);
+ }catch(e){message("saleMsg",friendly(e));}
+}
+async function receivePayment(id){
+ const sale=sales.find(x=>x.id===id);if(!sale||Number(sale.balance)<=0)return;
+ const raw=prompt("Hóa đơn "+sale.invoiceNo+"\nCòn phải thu: "+money(sale.balance)+"\nNhập số tiền khách thanh toán thêm:");
+ if(raw===null)return;const amount=Number(raw);
+ if(!Number.isFinite(amount)||amount<=0||amount>Number(sale.balance))return alert("Số tiền thu không hợp lệ hoặc vượt số còn nợ.");
+ const method=prompt("Hình thức thanh toán: Tiền mặt / Chuyển khoản / Thẻ","Tiền mặt");if(method===null)return;
+ try{const ref=db.collection("sales").doc(id);await db.runTransaction(async tx=>{const snap=await tx.get(ref);if(!snap.exists)throw new Error("Không tìm thấy hóa đơn.");const d=snap.data(),bal=Number(d.balance)||0;if(amount>bal)throw new Error("Công nợ đã thay đổi. Vui lòng tải lại.");const pay={amount,method,by:profile.name||currentUser.email,at:new Date()};tx.update(ref,{paid:(Number(d.paid)||0)+amount,balance:bal-amount,payments:firebase.firestore.FieldValue.arrayUnion(pay),lastPaymentAt:firebase.firestore.FieldValue.serverTimestamp()});});alert("Đã ghi nhận thu thêm "+money(amount)+".");}catch(e){alert(friendly(e));}
+}
+function printInvoice(id){
+ const x=sales.find(v=>v.id===id);if(!x)return;const d=saleDate(x),w=window.open("","_blank","width=720,height=800");if(!w)return alert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép pop-up.");
+ const paidRows=(x.payments||[]).map(p=>`<tr><td>${esc(p.method)}</td><td>${money(p.amount)}</td><td>${esc(p.by||"")}</td></tr>`).join("");
+ w.document.write(`<!doctype html><html lang="vi"><meta charset="utf-8"><title>${esc(x.invoiceNo)}</title><style>body{font-family:Arial;padding:28px;color:#222}h1{text-align:center}table{width:100%;border-collapse:collapse;margin-top:18px}td,th{border:1px solid #ccc;padding:9px;text-align:left}.right{text-align:right}.muted{color:#666}</style><h1>HÓA ĐƠN BÁN HÀNG</h1><p class="muted" style="text-align:center">Mã hóa đơn: ${esc(x.invoiceNo)}</p><p>Ngày: ${d?d.toLocaleString("vi-VN"):""}</p><p>Khách hàng: ${esc(x.customer)} – ${esc(x.phone)}</p><table><tr><th>Mã hàng</th><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr><tr><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${x.qty}</td><td>${money(x.unitPrice)}</td><td>${money(x.total)}</td></tr></table><h3 class="right">Tổng tiền: ${money(x.total)}</h3><p>Đã thu: ${money(x.paid)}</p><p>Còn phải thu: ${money(x.balance)}</p><h3>Lịch sử thanh toán</h3><table><tr><th>Hình thức</th><th>Số tiền</th><th>Người thu</th></tr>${paidRows}</table><p>Nhân viên bán: ${esc(x.staffName)}</p><p>Ghi chú: ${esc(x.note||"")}</p><p style="text-align:center;margin-top:40px">Cảm ơn quý khách!</p></html>`);w.document.close();w.print();
+}
+function saleDate(x){return x.createdAt?.toDate?x.createdAt.toDate():null;}
+function renderSales(){if(!$("salesRows"))return;const from=$("salesFrom").value,to=$("salesTo").value,staff=$("salesStaff").value;const arr=sales.filter(x=>{const d=saleDate(x);if(staff&&x.staffId!==staff)return false;if(from&&(!d||d<new Date(from+"T00:00:00")))return false;if(to&&(!d||d>new Date(to+"T23:59:59")))return false;return true;});$("salesRows").innerHTML=arr.map(x=>`<tr><td>${esc(x.invoiceNo)}</td><td>${saleDate(x)?.toLocaleString("vi-VN")||"Đang lưu..."}</td><td>${esc(x.customer)}<br><small>${esc(x.phone)}</small></td><td>${esc(x.code)} - ${esc(x.name)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${Number(x.balance)>0?'<span class="bad">'+money(x.balance)+'</span>':money(0)}</td><td>${esc(x.staffName)}</td><td><button class="light" onclick="printInvoice('${x.id}')">In</button> ${Number(x.balance)>0?`<button onclick="receivePayment('${x.id}')">Thu thêm</button>`:""}</td></tr>`).join("")||'<tr><td colspan="10">Chưa có hóa đơn.</td></tr>';const sel=$("salesStaff"),old=sel.value;sel.innerHTML='<option value="">Tất cả nhân viên</option>'+[...new Map(sales.map(x=>[x.staffId,x.staffName])).entries()].map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("");sel.value=old;}
+function downloadSalesCSV(){const rows=[["Mã hóa đơn","Thời gian","Khách hàng","Điện thoại","Mã hàng","Tên hàng","Số lượng","Đơn giá","Thành tiền","Đã thu","Còn nợ","Hình thức","Nhân viên"],...sales.map(x=>[x.invoiceNo,saleDate(x)?.toLocaleString("vi-VN")||"",x.customer,x.phone,x.code,x.name,x.qty,x.unitPrice,x.total,x.paid,x.balance,x.paymentMethod,x.staffName])];const csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="bao-cao-ban-hang.csv";a.click();URL.revokeObjectURL(a.href);}
+
+function dateOf(m){return m.createdAt?.toDate?m.createdAt.toDate():null;}
+function renderHistory(){if(!$("historyRows"))return;const type=$("historyType").value,from=$("dateFrom").value,to=$("dateTo").value;const arr=movements.filter(m=>{const d=dateOf(m);if(type&&m.type!==type)return false;if(from&&(!d||d<new Date(from+"T00:00:00")))return false;if(to&&(!d||d>new Date(to+"T23:59:59")))return false;return true;});$("historyRows").innerHTML=arr.map(m=>{const d=dateOf(m);return `<tr><td>${d?d.toLocaleString("vi-VN"):"Đang lưu..."}</td><td>${m.type==="IN"?'<span class="good">NHẬP</span>':(m.type==="SALE"?'<span class="pill">BÁN HÀNG</span>':'<span class="bad">XUẤT</span>')}</td><td>${esc(m.code)}</td><td>${esc(m.name)}</td><td>${m.qty}</td><td>${m.type==="IN"?money(m.unitCost):"—"}</td><td>${m.type==="IN"?money(m.totalCost):"—"}</td><td>${esc(m.userName)}</td><td>${esc(m.partner)}</td><td>${esc(m.note)}</td></tr>`}).join("")||'<tr><td colspan="10">Chưa có giao dịch.</td></tr>';}
+function downloadCSV(){const rows=[["Thời gian","Loại","Mã hàng","Tên hàng","Số lượng","Đơn giá nhập","Thành tiền nhập","Người thao tác","Đối tác","Ghi chú"],...movements.map(m=>[dateOf(m)?.toLocaleString("vi-VN")||"",m.type==="IN"?"Nhập":"Xuất",m.code,m.name,m.qty,m.unitCost||"",m.totalCost||"",m.userName,m.partner,m.note])];const csv="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="bao-cao-kho.csv";a.click();URL.revokeObjectURL(a.href);}
+async function createStaff(){if(!isAdmin())return;const name=$("staffName").value.trim(),email=$("staffEmail").value.trim(),pass=$("staffPass").value;if(!name||!email||pass.length<6)return message("staffMsg","Nhập đủ họ tên, email và mật khẩu tối thiểu 6 ký tự.");try{const secondary=firebase.app("staffCreator"),cred=await secondary.auth().createUserWithEmailAndPassword(email,pass);await db.collection("users").doc(cred.user.uid).set({name,email,role:"staff",createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:currentUser.uid});await secondary.auth().signOut();$("staffName").value=$("staffEmail").value=$("staffPass").value="";message("staffMsg","Đã tạo tài khoản nhân viên thành công.",true);}catch(e){try{await firebase.app("staffCreator").auth().signOut();}catch(_){}message("staffMsg",friendly(e));}}
+function renderUsers(){if(!$("staffRows"))return;$("staffRows").innerHTML=users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td><span class="pill">${u.role==="admin"?"Admin":"Nhân viên"}</span></td><td>${u.createdAt?.toDate?u.createdAt.toDate().toLocaleDateString("vi-VN"):"—"}</td></tr>`).join("")||'<tr><td colspan="4">Chưa có tài khoản.</td></tr>';}
+</script>
+</body>
+</html>
